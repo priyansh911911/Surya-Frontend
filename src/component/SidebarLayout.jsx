@@ -7,7 +7,6 @@ const SidebarLayout = () => {
     <div className="flex">
       {/* Sidebar fixed */}
       <SideBar />
-
       {/* Pages will load here */}
       <div className="flex-1 p-5 bg-gray-100 min-h-screen">
         <Outlet />
