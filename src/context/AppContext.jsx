@@ -11,6 +11,7 @@ export const AppContextProvider = ({ children }) => {
 
   const [user, setUser] = useState(null);
   const [isSeller, setSeller] = useState(false);
+  const navigate = useNavigate();
 
   // Sidebar menu items context me de diye
   const menuItems = [

@@ -13,11 +13,11 @@ function Login() {
       e.preventDefault();
       setError("");
       try {
-        const response = await axios.post(
-          "https://surya-backend-sepia.vercel.app/api/auth/login",
+        const {data } = await axios.post(
+          "/api/auth/login",
           { email, password }
         );
-        const data = response.data;
+        // const data = response.data;
         console.log("API response:", data); // Debug log
 
         if (data.user && data.user.role) {
