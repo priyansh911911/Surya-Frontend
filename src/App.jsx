@@ -10,6 +10,10 @@ import ItemsList from "./pages/ItemsList";
 import Login from "./pages/LogIn";
 import ProtectedRoute from "./component/ProtectedRoute";
 
+
+import SidebarLayout from "./component/SidebarLayout";
+import Orders from "./pages/Orders";
+
 import SideBar from "./component/SideBar";
 
 export default function App() {
@@ -20,7 +24,6 @@ export default function App() {
       <Routes>
         {/* Login page without sidebar */}
         <Route path="/login" element={<Login />} />
-
         {/* Protected pages with Sidebar */}
         <Route
           element={
@@ -37,7 +40,6 @@ export default function App() {
           <Route path="/expiry" element={<ExpiryReport />} />
           <Route path="/user" element={<UserManagement />} />
         </Route>
-
         {/* Default route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
