@@ -8,7 +8,9 @@ import UserManagement from "./pages/UserManagement";
 import ItemsList from "./pages/ItemsList";
 import Login from "./pages/LogIn";
 import ProtectedRoute from "./component/ProtectedRoute";
-import SideBar from "./component/SideBar";
+
+import SidebarLayout from "./component/SidebarLayout";
+import Orders from "./pages/Orders";
 
 export default function App() {
   return (
@@ -17,10 +19,10 @@ export default function App() {
       <Route path="/login" element={<Login />} />
 
       {/* Protected pages with Sidebar */}
-      <Route
+       <Route
         element={
           <ProtectedRoute>
-            <SideBar />
+            <SidebarLayout />
           </ProtectedRoute>
         }
       >
@@ -31,6 +33,8 @@ export default function App() {
   <Route path="/stock" element={<StockReport />} />
   <Route path="/expiry" element={<ExpiryReport />} />
   <Route path="/user" element={<UserManagement />} />
+        <Route path="/orders" element={<Orders />} />
+
       </Route>
 
       {/* Default route */}
