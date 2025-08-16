@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import AddItem from '../component/Item';
 
 function ItemsList() {
@@ -17,14 +18,17 @@ function ItemsList() {
         setItems([]);
       }
     }
+    
     fetchItems();
+    
+    // Set up polling for real-time updates
+    const interval = setInterval(fetchItems, 5000); // Poll every 5 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
-  // Optionally, refresh items after adding
   const handleItemAdded = () => {
     setShowAdd(false);
-    // Re-fetch items
-    axios.get('https://surya-backend-sepia.vercel.app/api/item').then(res => setItems(res.data));
   };
 
   const handleEditClick = (item) => {
@@ -59,10 +63,14 @@ function ItemsList() {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     try {
+      console.log('Deleting item with id:', id);
       await axios.delete(`https://surya-backend-sepia.vercel.app/api/item/${id}`);
       setItems(items.filter(item => item._id !== id));
+      toast.success('Item deleted successfully!');
     } catch (err) {
-      alert('Failed to delete item');
+      console.error('Delete error:', err);
+      const errorMsg = err?.response?.data?.message || 'Failed to delete item';
+      toast.error(errorMsg);
     }
   };
 
