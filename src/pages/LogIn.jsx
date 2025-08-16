@@ -23,6 +23,7 @@ function Login() {
         if (data.user && data.user.role) {
           // Set user in context (no token handling)
           if (typeof setUser === 'function') setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
           // Redirect to dashboard (sidebar)
           navigate("/");
         } else {

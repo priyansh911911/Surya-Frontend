@@ -8,6 +8,7 @@ axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 export const AppContext = createContext();
 
 export const AppContextProvider = ({ children }) => {
+
   const [user, setUser] = useState(null);
   const [isSeller, setSeller] = useState(false);
 
@@ -28,6 +29,7 @@ export const AppContextProvider = ({ children }) => {
   };
 
   const value = {
+    navigate,
     user,
     setUser,
     isSeller,
