@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import UserManagement from "./pages/UserManagement";
 import ItemsList from "./pages/ItemsList";
 import Login from "./pages/LogIn";
+import ProtectedRoute from "./component/ProtectedRoute";
 
 import SideBar from "./component/SideBar";
 
