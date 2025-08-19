@@ -12,9 +12,9 @@ export const AppContextProvider = ({ children }) => {
   const [items, setItems] = useState([]);
   const [isSeller, setSeller] = useState(false);
   const [medicines, setMedicines] = useState([]);
-  const [loading, setLoading] = useState(false);
-  // const [toastState, setToastState] = useState(null); // internal state
-  const [theme, setTheme] = useState("light");
+  const [loading, setLoading] = useState(false); // NEW: global loading
+  const [toast, setToast] = useState(null); // NEW: global toast
+  const [theme, setTheme] = useState("light"); // NEW: theme toggle
   const navigate = useNavigate();
   
 
@@ -69,37 +69,37 @@ export const AppContextProvider = ({ children }) => {
     axios,
     medicines,
     setMedicines,
-    loading,
-    setLoading,
-    // expose current toast
-          // expose wrapper function
-    theme,
-    setTheme,
-    toggleTheme,
+    loading, // NEW
+    setLoading, // NEW
+    toast, // NEW
+    setToast, // NEW
+  
+    theme, // NEW
+    setTheme, // NEW
+    toggleTheme, // NEW 
     items,
   };
 
   return (
     <AppContext.Provider value={value}>
-      {/* ✅ Global Toast */}
-      {/* {toastState && (
+      {/* Toast notification */}
+      {toast && (
         <div
           style={{
             position: "fixed",
             top: 20,
             right: 20,
             zIndex: 9999,
-            background: toastState.type === "error" ? "#fee2e2" : "#bbf7d0",
-            color: toastState.type === "error" ? "#b91c1c" : "#166534",
+            background: toast.type === "error" ? "#fee2e2" : "#bbf7d0",
+            color: toast.type === "error" ? "#b91c1c" : "#166534",
             padding: "12px 20px",
             borderRadius: 8,
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            transition: "opacity 0.3s ease-in-out",
-          }} 
+          }}
         >
-          {/* {toastState.message} 
+          {toast.message}
         </div>
-      )}*/}
+      )}
       {children}
     </AppContext.Provider>
   );
