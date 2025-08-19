@@ -3,11 +3,6 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAppContext } from '../context/AppContext';
 
-// Category mapping
-const getCategoryText = (categoryNumber) => {
-  return categoryNumber === 1 ? 'Surya Medical' : categoryNumber === 2 ? 'Surya Optical' : categoryNumber;
-};
-
 function EditItemPage() {
   const { axios } = useAppContext();
   const navigate = useNavigate();
@@ -23,14 +18,10 @@ function EditItemPage() {
 
   useEffect(() => {
     if (location.state?.item) {
-      const item = location.state.item;
-      setFormData({
-        ...item,
-        category: getCategoryText(item.category)
-      });
+      setFormData(location.state.item);
     } else {
       toast.error('Item data not found');
-      navigate('/items', { state: { refresh: true } });
+      navigate('/items');
     }
   }, [location.state, navigate]);
 
@@ -45,18 +36,10 @@ function EditItemPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        ...formData,
-        category: formData.category === 'Surya Medical' ? 1 : formData.category === 'Surya Optical' ? 2 : formData.category,
-        price: Number(formData.price),
-        stock: Number(formData.stock)
-      };
-      console.log('Updating item with payload:', payload);
-      await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/item/${id}`, payload);
+      await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/item/${id}`, formData);
       toast.success('Item updated successfully!');
-      navigate('/items', { state: { refresh: true } });
+      navigate('/items');
     } catch (err) {
-      console.error('Update error:', err.response?.data || err.message);
       toast.error('Failed to update item');
     }
   };
@@ -121,8 +104,8 @@ function EditItemPage() {
               required
             >
               <option value="">Select category</option>
-              <option value="Surya Optical">Surya Optical</option>
-              <option value="Surya Medical">Surya Medical</option>
+              <option value="2">Surya Optical</option>
+              <option value="1">Surya Medical</option>
             </select>
           </div>
 
