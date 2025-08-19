@@ -4,23 +4,20 @@ import { useAppContext } from "../context/AppContext";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [ordersPerPage] = useState(5);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalOrders: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
   const [search, setSearch] = useState("");
   const { axios, navigate } = useAppContext();
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (page = 1, searchQuery = "") => {
     try {
-      console.log('Fetching orders from /api/orders');
-      const response = await axios.get("/api/orders");
-      console.log('Orders response:', response);
-      console.log('Orders data:', response.data);
-      
-      // Extract orders from the response object (similar to items API)
-      const data = response.data.orders || response.data || [];
-      console.log('Extracted orders:', data);
-      console.log('Setting orders:', data.length, 'orders');
-      setOrders(Array.isArray(data) ? data : []);
+      const { data } = await axios.get("/api/orders");
+      setOrders(data);
     } catch (err) {
       console.error("Failed to fetch orders:", err);
       console.error('Error details:', err.response?.data || err.message);
@@ -31,25 +28,22 @@ export default function Orders() {
   const viewInvoice = (orderId) => {
     window.open(`/orders/${orderId}/invoice`, "_blank");
   };
+
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(1, search); // initial load
   }, []);
 
-  // Filter orders by search
-  const filteredOrders = orders.filter(
-    (o) =>
-      o.customerName?.toLowerCase().includes(search.toLowerCase()) ||
-      o.customerPhone?.toLowerCase().includes(search.toLowerCase()) ||
-      o.orderNumber?.toString().includes(search)
-  );
+  // jab search kare to page 1 se reload ho
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    fetchOrders(1, value);
+  };
 
-  // Pagination logic
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  // pagination click
+  const paginate = (pageNumber) => {
+    fetchOrders(pageNumber, search);
+  };
 
   return (
     <div className="p-6">
@@ -60,7 +54,7 @@ export default function Orders() {
             type="text"
             placeholder="Search orders..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearch}
             className="border px-3 py-2 rounded"
           />
           <button
@@ -85,12 +79,14 @@ export default function Orders() {
             </tr>
           </thead>
           <tbody>
-            {currentOrders.map((o) => (
+            {orders.map((o) => (
               <tr key={o._id} className="border-t hover:bg-gray-50">
                 <td className="p-3 font-semibold">{o.orderNumber}</td>
                 <td className="p-3">{o.customerName}</td>
                 <td className="p-3">{o.customerPhone}</td>
-                <td className="p-3 font-bold text-green-600">₹{o.totalAmount}</td>
+                <td className="p-3 font-bold text-green-600">
+                  ₹{Number(o.totalAmount).toFixed(2)}
+                </td>
                 <td className="p-3">
                   <button
                     onClick={() => viewInvoice(o._id)}
@@ -102,7 +98,7 @@ export default function Orders() {
               </tr>
             ))}
 
-            {filteredOrders.length === 0 && (
+            {orders.length === 0 && (
               <tr>
                 <td colSpan="5" className="text-center p-4 text-gray-500">
                   No orders found.
@@ -113,22 +109,24 @@ export default function Orders() {
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination from API */}
       <div className="flex justify-center items-center mt-4 space-x-2">
         <button
-          onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
-          disabled={currentPage === 1}
+          onClick={() =>
+            pagination.hasPrevPage && paginate(pagination.currentPage - 1)
+          }
+          disabled={!pagination.hasPrevPage}
           className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
         >
           Previous
         </button>
 
-        {[...Array(totalPages)].map((_, idx) => (
+        {[...Array(pagination.totalPages)].map((_, idx) => (
           <button
             key={idx + 1}
             onClick={() => paginate(idx + 1)}
             className={`px-3 py-1 rounded ${
-              currentPage === idx + 1
+              pagination.currentPage === idx + 1
                 ? "bg-blue-600 text-white"
                 : "bg-gray-200 hover:bg-gray-300"
             }`}
@@ -139,9 +137,9 @@ export default function Orders() {
 
         <button
           onClick={() =>
-            currentPage < totalPages && setCurrentPage(currentPage + 1)
+            pagination.hasNextPage && paginate(pagination.currentPage + 1)
           }
-          disabled={currentPage === totalPages}
+          disabled={!pagination.hasNextPage}
           className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
         >
           Next
