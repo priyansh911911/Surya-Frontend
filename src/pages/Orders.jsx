@@ -1,5 +1,6 @@
 // Orders.jsx
 import React, { useEffect, useState } from "react";
+import { toast } from 'react-toastify';
 import { useAppContext } from "../context/AppContext";
 
 export default function Orders() {
@@ -22,8 +23,14 @@ export default function Orders() {
 
       setOrders(data.orders || []); // API se jo array aa raha hai
       setPagination(data.pagination || {});
+      
+      // Show success toast when orders are loaded
+      if (data.orders && data.orders.length > 0) {
+        toast.success(`Loaded ${data.orders.length} orders successfully!`);
+      }
     } catch (err) {
       console.error("Failed to fetch orders:", err);
+      toast.error('Failed to load orders');
     }
   };
 

@@ -73,6 +73,14 @@ function ItemsList() {
         if (search.trim()) {
           params.search = search.trim();
         }
+        if (stockFilter === 'in_stock') {
+          params.stock = 'in_stock';
+        } else if (stockFilter === 'out_of_stock') {
+          params.stock = 'out_of_stock';
+        }
+        if (sortBy !== 'Both') {
+          params.category = sortBy;
+        }
         const fullUrl = axios.defaults.baseURL + '/api/item';
         console.log('Fetching items from:', '/api/item');
         console.log('Params:', params);
@@ -199,18 +207,26 @@ function ItemsList() {
                   <div className="flex items-center">
                     <button
                       onClick={() => {
-                        if (stockFilter === 'all') setStockFilter('in_stock');
-                        else if (stockFilter === 'in_stock') setStockFilter('out_of_stock');
-                        else setStockFilter('all');
+                        console.log('Toggle clicked, current:', stockFilter);
+                        if (stockFilter === 'all') {
+                          console.log('Setting to in_stock');
+                          setStockFilter('in_stock');
+                        } else if (stockFilter === 'in_stock') {
+                          console.log('Setting to out_of_stock');
+                          setStockFilter('out_of_stock');
+                        } else {
+                          console.log('Setting to all');
+                          setStockFilter('all');
+                        }
                       }}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
                         stockFilter === 'out_of_stock' ? 'bg-red-500' : 
-                        stockFilter === 'in_stock' ? 'bg-green-500' : 'bg-gray-300'
+                        stockFilter === 'in_stock' ? 'bg-green-500' : 'bg-gray-400'
                       }`}
                     >
                       <span
-                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                          stockFilter === 'out_of_stock' ? 'translate-x-5' : 
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          stockFilter === 'out_of_stock' ? 'translate-x-6' : 
                           stockFilter === 'in_stock' ? 'translate-x-1' : 'translate-x-3'
                         }`}
                       />
