@@ -16,14 +16,12 @@ export default function Orders() {
 
   const fetchOrders = async (page = 1, searchQuery = "") => {
     try {
-      const { data } = await axios.get("/api/orders", {
-        params: { page, search: searchQuery },
-      });
-
-      setOrders(data.orders || []); // API se jo array aa raha hai
-      setPagination(data.pagination || {});
+      const { data } = await axios.get("/api/orders");
+      setOrders(data);
     } catch (err) {
       console.error("Failed to fetch orders:", err);
+      console.error('Error details:', err.response?.data || err.message);
+      setOrders([]);
     }
   };
 
