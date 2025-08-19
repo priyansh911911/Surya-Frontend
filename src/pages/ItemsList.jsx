@@ -1,138 +1,205 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import AddItem from '../component/Item';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useAppContext } from '../context/AppContext';
+
+// Category mapping function
+const getCategoryText = (categoryNumber) => {
+  return categoryNumber === 1 ? 'Surya Medical' : categoryNumber === 2 ? 'Surya Optical' : categoryNumber;
+};
 
 function ItemsList() {
   const [items, setItems] = useState([]);
-  const [editId, setEditId] = useState(null);
-  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: '', quantity: '' });
-  const [showAdd, setShowAdd] = useState(false);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [sortBy, setSortBy] = useState('Both');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deletingId, setDeletingId] = useState(null);
+  const {axios} = useAppContext();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const itemsPerPage = 25;
 
   useEffect(() => {
-    async function fetchItems() {
+    fetchItems();
+    
+    // Refresh when window gains focus (when returning from edit)
+    const handleFocus = () => fetchItems();
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Refresh items when returning from edit
+  useEffect(() => {
+    if (location.state?.refresh) {
+      fetchItems();
+      // Clear the refresh state to prevent multiple refreshes
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  async function fetchItems() {
       try {
-        const res = await axios.get('https://surya-backend-sepia.vercel.app/api/item');
+        const res = await axios.get('/api/item');
         setItems(res.data);
       } catch (err) {
         setItems([]);
       }
     }
-    
-    fetchItems();
-    
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchItems, 5000); // Poll every 5 seconds
-    
-    return () => clearInterval(interval);
-  }, []);
 
-  const handleItemAdded = () => {
-    setShowAdd(false);
+  useEffect(() => {
+    let filtered = items;
+    
+    // Filter by category
+    if (sortBy !== 'Both') {
+      filtered = filtered.filter(item => 
+        item.category && item.category.toString() === sortBy
+      );
+    }
+    
+    setFilteredItems(filtered);
+  }, [items, sortBy]);
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
+
+
 
   const handleEditClick = (item) => {
-    setEditId(item._id);
-    setEditForm({
-      name: item.name,
-      description: item.description,
-      price: item.price,
-      category: item.category,
-      quantity: item.quantity,
-    });
+    navigate(`/items/edit/${item._id}`, { state: { item } });
   };
 
-  const handleEditChange = (e) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
 
-  const handleEditSave = async (id) => {
-    try {
-      await axios.put(`https://surya-backend-sepia.vercel.app/api/item/${id}`, editForm);
-      setItems(items.map(item => item._id === id ? { ...item, ...editForm } : item));
-      setEditId(null);
-    } catch (err) {
-      alert('Failed to update item');
-    }
-  };
-
-  const handleEditCancel = () => {
-    setEditId(null);
-  };
    
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
+    setDeletingId(id);
     try {
       console.log('Deleting item with id:', id);
-      await axios.delete(`https://surya-backend-sepia.vercel.app/api/item/${id}`);
+      await axios.delete(`/api/item/${id}`);
       setItems(items.filter(item => item._id !== id));
+      fetchItems();
       toast.success('Item deleted successfully!');
     } catch (err) {
       console.error('Delete error:', err);
       const errorMsg = err?.response?.data?.message || 'Failed to delete item';
       toast.error(errorMsg);
+    } finally {
+      setDeletingId(null);
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4">
       <h3 className="text-3xl font-bold mb-8 text-center text-indigo-700">Items List</h3>
-      <div className="flex justify-end mb-6">
+      <div className="flex justify-between mb-6">
+        <div className="flex items-center gap-2 print:hidden">
+          <label className="text-sm font-medium text-gray-700">Sort by:</label>
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="Both">Both</option>
+            <option value="2">Surya Opticals</option>
+            <option value="1">Surya Medicals</option>
+          </select>
+        </div>
         <button
           className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          onClick={() => setShowAdd(true)}
+          onClick={() => navigate('/items/add')}
         >
           Add Item
         </button>
       </div>
-      {showAdd && (
-        <div className="mb-8">
-          <AddItem onItemAdded={handleItemAdded} />
-          <div className="flex justify-end mt-2">
-            <button className="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500" onClick={() => setShowAdd(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
-      {items.length === 0 ? (
+
+      {filteredItems.length === 0 ? (
         <div className="text-gray-500 text-center">No items found.</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-          {items.map((item, idx) => (
-            <div key={item._id || idx} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 flex flex-col justify-between">
-              {editId === item._id ? (
-                <form className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input className="w-full px-3 py-2 border rounded-lg" name="name" value={editForm.name} onChange={handleEditChange} />
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea className="w-full px-3 py-2 border rounded-lg" name="description" value={editForm.description} onChange={handleEditChange} />
-                  <label className="block text-sm font-medium text-gray-700">Price</label>
-                  <input className="w-full px-3 py-2 border rounded-lg" name="price" type="number" value={editForm.price} onChange={handleEditChange} />
-                  <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                  <input className="w-full px-3 py-2 border rounded-lg" name="quantity" type="number" value={editForm.quantity} onChange={handleEditChange} />
-                  <label className="block text-sm font-medium text-gray-700">Category</label>
-                  <input className="w-full px-3 py-2 border rounded-lg" name="category" value={editForm.category} onChange={handleEditChange} />
-                  <div className="flex gap-2 mt-2">
-                    <button type="button" className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600" onClick={() => handleEditSave(item._id)}>Save</button>
-                    <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500" onClick={handleEditCancel}>Cancel</button>
-                  </div>
-                </form>
-              ) : (
-                <div>
-                  <h4 className="text-xl font-bold text-indigo-600 mb-2">{item.name}</h4>
-                  <p className="text-gray-700 mb-2">{item.description}</p>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    <span className="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-semibold">Category: {item.category}</span>
-                    <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Price: ₹{item.price}</span>
-                    <span className="inline-block bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Qty: {item.quantity}</span>
-                  </div>
-                  <div className="mt-4 flex justify-end gap-2">
-                    <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition" onClick={() => handleEditClick(item)}>Edit</button>
-                    <button className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition" onClick={() => handleDelete(item._id)}>Delete</button>
-                  </div>
-                </div>
-              )}
-            </div>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:hidden">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {(window.matchMedia && window.matchMedia('print').matches ? filteredItems : currentItems).map((item, idx) => (
+                <tr key={item._id || idx} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{item.description}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getCategoryText(item.category)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{item.price}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {item.stock === 0 ? (
+                      <span className="text-red-500 font-medium">Out of Stock</span>
+                    ) : (
+                      item.stock
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium print:hidden">
+                    <div className="flex gap-2">
+                      <button className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" onClick={() => handleEditClick(item)}>Edit</button>
+                      <button 
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 disabled:opacity-50" 
+                        onClick={() => handleDelete(item._id)}
+                        disabled={deletingId === item._id}
+                      >
+                        {deletingId === item._id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      
+      {filteredItems.length > 0 && (
+        <div className="flex justify-center items-center mt-6 gap-2 print:hidden">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`px-3 py-2 rounded ${
+                currentPage === page
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {page}
+            </button>
           ))}
+          
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
