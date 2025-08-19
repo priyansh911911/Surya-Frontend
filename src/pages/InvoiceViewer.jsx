@@ -2,6 +2,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import { toast } from "react-toastify";
+
+// ✅ Category Mapping
+const categoryMap = {
+  1: "Surya Medical",
+  2: "Surya Optical",
+};
 
 function formatIST(dateString) {
   if (!dateString) return "N/A";
@@ -39,67 +46,66 @@ export default function InvoiceViewer() {
     fetchInvoice();
   }, [orderId, axios]);
 
-const handlePrint = () => {
-  if (printRef.current) {
-    const printContents = printRef.current.innerHTML;
-    const win = window.open("", "_blank");
-    win.document.write(`
-      <html>
-        <head>
-          <title>Medical Invoice</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; margin: 0; color: #000; }
-            .text-center { text-align: center; }
-            .border-b-2 { border-bottom: 2px solid #2563eb; }
-            .pb-6 { padding-bottom: 24px; }
-            .mb-6 { margin-bottom: 24px; }
-            .text-2xl { font-size: 24px; }
-            .text-3xl { font-size: 30px; }
-            .font-bold { font-weight: bold; }
-            .text-blue-600 { color: #2563eb; }
-            .text-sm { font-size: 14px; }
-            .text-xs { font-size: 12px; }
-            .text-gray-600 { color: #666; }
-            .text-gray-500 { color: #999; }
-            .grid { display: grid; }
-            .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-            .gap-6 { gap: 24px; }
-            .font-semibold { font-weight: 600; }
-            .text-gray-800 { color: #333; }
-            .mb-3 { margin-bottom: 12px; }
-            .space-y-1 > * + * { margin-top: 4px; }
-            .font-medium { font-weight: 500; }
-            table { border-collapse: collapse; width: 100%; margin: 10px 0; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background: #f8fafc; font-weight: 600; text-transform: uppercase; font-size: 12px; }
-            .text-right { text-align: right; }
-            .text-center { text-align: center; }
-            .border-t { border-top: 1px solid #ddd; }
-            .pt-4 { padding-top: 16px; }
-            .w-80 { width: 320px; }
-            .space-y-2 > * + * { margin-top: 8px; }
-            .text-red-600 { color: #dc2626; }
-            .text-lg { font-size: 18px; }
-            .pt-2 { padding-top: 8px; }
-            .mt-8 { margin-top: 32px; }
-            .pt-6 { padding-top: 24px; }
-            .mt-1 { margin-top: 4px; }
-            .flex { display: flex; }
-            .justify-between { justify-content: space-between; }
-            .flex-col { flex-direction: column; }
-            .items-end { align-items: flex-end; }
-          </style>
-        </head>
-        <body>${printContents}</body>
-      </html>
-    `);
-    win.document.close();
-    win.focus();
-    win.print();
-    win.close();
-  }
-};
-
+  const handlePrint = () => {
+    if (printRef.current) {
+      const printContents = printRef.current.innerHTML;
+      const win = window.open("", "_blank");
+      win.document.write(`
+        <html>
+          <head>
+            <title>Medical Invoice</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; margin: 0; color: #000; }
+              .text-center { text-align: center; }
+              .border-b-2 { border-bottom: 2px solid #2563eb; }
+              .pb-6 { padding-bottom: 24px; }
+              .mb-6 { margin-bottom: 24px; }
+              .text-2xl { font-size: 24px; }
+              .text-3xl { font-size: 30px; }
+              .font-bold { font-weight: bold; }
+              .text-blue-600 { color: #2563eb; }
+              .text-sm { font-size: 14px; }
+              .text-xs { font-size: 12px; }
+              .text-gray-600 { color: #666; }
+              .text-gray-500 { color: #999; }
+              .grid { display: grid; }
+              .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+              .gap-6 { gap: 24px; }
+              .font-semibold { font-weight: 600; }
+              .text-gray-800 { color: #333; }
+              .mb-3 { margin-bottom: 12px; }
+              .space-y-1 > * + * { margin-top: 4px; }
+              .font-medium { font-weight: 500; }
+              table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background: #f8fafc; font-weight: 600; text-transform: uppercase; font-size: 12px; }
+              .text-right { text-align: right; }
+              .text-center { text-align: center; }
+              .border-t { border-top: 1px solid #ddd; }
+              .pt-4 { padding-top: 16px; }
+              .w-80 { width: 320px; }
+              .space-y-2 > * + * { margin-top: 8px; }
+              .text-red-600 { color: #dc2626; }
+              .text-lg { font-size: 18px; }
+              .pt-2 { padding-top: 8px; }
+              .mt-8 { margin-top: 32px; }
+              .pt-6 { padding-top: 24px; }
+              .mt-1 { margin-top: 4px; }
+              .flex { display: flex; }
+              .justify-between { justify-content: space-between; }
+              .flex-col { flex-direction: column; }
+              .items-end { align-items: flex-end; }
+            </style>
+          </head>
+          <body>${printContents}</body>
+        </html>
+      `);
+      win.document.close();
+      win.focus();
+      win.print();
+      win.close();
+    }
+  };
 
   const handleDownload = () => {
     if (printRef.current) {
@@ -202,7 +208,12 @@ const handlePrint = () => {
                       <tr key={idx} className="border-b">
                         <td className="p-3 text-sm">{idx + 1}</td>
                         <td className="p-3 text-sm font-medium">{item.itemName}</td>
-                        <td className="p-3 text-sm text-gray-600 hidden sm:table-cell">{item.category || "-"}</td>
+                        {/* ✅ Category mapped: handles 1/"1" and 2/"2" */}
+                        <td className="p-3 text-sm text-gray-600 hidden sm:table-cell">
+                          {categoryMap[item.category] ||
+                           categoryMap[Number(item.category)] ||
+                           item.category || "-"}
+                        </td>
                         <td className="p-3 text-sm text-center">{item.quantity}</td>
                         <td className="p-3 text-sm text-right">₹{item.unitPrice}</td>
                         <td className="p-3 text-sm text-right font-medium">₹{item.totalPrice}</td>
