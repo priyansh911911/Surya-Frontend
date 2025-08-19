@@ -11,10 +11,20 @@ export default function Orders() {
 
   const fetchOrders = async () => {
     try {
-      const { data } = await axios.get("/api/orders");
-      setOrders(data);
+      console.log('Fetching orders from /api/orders');
+      const response = await axios.get("/api/orders");
+      console.log('Orders response:', response);
+      console.log('Orders data:', response.data);
+      
+      // Extract orders from the response object (similar to items API)
+      const data = response.data.orders || response.data || [];
+      console.log('Extracted orders:', data);
+      console.log('Setting orders:', data.length, 'orders');
+      setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch orders:", err);
+      console.error('Error details:', err.response?.data || err.message);
+      setOrders([]);
     }
   };
 

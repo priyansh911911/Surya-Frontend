@@ -1,11 +1,30 @@
 // src/pages/CreateOrder.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
+import { toast } from 'react-toastify';
 import Select from "react-select";
 
 export default function CreateOrder() {
   const [error, setError] = useState("");
-  const { axios, loading, setLoading, toast, setToast, navigate, items } = useAppContext();
+  const [items, setItems] = useState([]);
+  const { axios, loading, setLoading, navigate } = useAppContext();
+
+  // Fetch items for the dropdown
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        console.log('Fetching items for CreateOrder...');
+        const res = await axios.get('/api/item');
+        const data = res.data.items || res.data || [];
+        console.log('Items for CreateOrder:', data.length);
+        setItems(data);
+      } catch (err) {
+        console.error('Failed to fetch items:', err);
+        setItems([]);
+      }
+    };
+    fetchItems();
+  }, [axios]);
 
   const [form, setForm] = useState({
     orderNumber: "",
@@ -75,7 +94,7 @@ export default function CreateOrder() {
     );
     if (!form.customerName || !form.customerPhone || invalid) {
       setError("Please fill all required fields.");
-      setToast && setToast({ type: "error", message: "Please fill all required fields." });
+      toast.error("Please fill all required fields.");
       return;
     }
 
@@ -84,12 +103,12 @@ export default function CreateOrder() {
     try {
       setLoading(true);
       await axios.post("/api/orders", payload);
-      setToast && setToast({ type: "success", message: "Order created successfully!" });
+      toast.success("Order created successfully!");
       navigate("/orders");
     } catch (e) {
       const msg = e?.response?.data?.message || "Failed to create order";
       setError(msg);
-      setToast && setToast({ type: "error", message: msg });
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

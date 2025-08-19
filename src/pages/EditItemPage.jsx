@@ -14,6 +14,7 @@ function EditItemPage() {
     price: 0,
     category: '',
     stock: 0,
+    is_oos: false,
   });
 
   useEffect(() => {
@@ -36,10 +37,26 @@ function EditItemPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/item/${id}`, formData);
+      console.log('=== UPDATING ITEM ===');
+      console.log('Item ID:', id);
+      console.log('Form data being sent:', formData);
+      console.log('Stock value:', formData.stock, 'Type:', typeof formData.stock);
+      console.log('API URL:', `${import.meta.env.VITE_BACKEND_URL}api/item/${id}`);
+      
+      const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/item/${id}`, formData);
+      
+      console.log('=== UPDATE RESPONSE ===');
+      console.log('Status:', response.status);
+      console.log('Response data:', response.data);
+      console.log('Updated stock in response:', response.data?.stock);
+      
       toast.success('Item updated successfully!');
       navigate('/items', { state: { refresh: true } });
     } catch (err) {
+      console.error('=== UPDATE ERROR ===');
+      console.error('Error status:', err.response?.status);
+      console.error('Error data:', err.response?.data);
+      console.error('Full error:', err);
       toast.error('Failed to update item');
     }
   };
@@ -92,6 +109,19 @@ function EditItemPage() {
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
               required
             />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="is_oos"
+                checked={formData.is_oos}
+                onChange={(e) => setFormData(prev => ({ ...prev, is_oos: e.target.checked }))}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700 font-medium">Out of Stock</span>
+            </label>
           </div>
 
           <div>

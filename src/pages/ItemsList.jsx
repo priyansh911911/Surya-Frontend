@@ -10,8 +10,14 @@ const getCategoryText = (categoryNumber) => {
 
 function ItemsList() {
   const [items, setItems] = useState([]);
+  
+  // Debug items state
+  console.log('Current items state:', items);
+  console.log('Items length:', items.length);
   const [filteredItems, setFilteredItems] = useState([]);
   const [sortBy, setSortBy] = useState('Both');
+  const [stockFilter, setStockFilter] = useState('all'); // 'all', 'in_stock', 'out_of_stock'
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [deletingId, setDeletingId] = useState(null);
   const {axios} = useAppContext();
@@ -21,10 +27,14 @@ function ItemsList() {
   const itemsPerPage = 25;
 
   useEffect(() => {
-    fetchItems();
+    console.log('ItemsList mounted, fetching items...');
+    fetchItems(searchTerm);
     
     // Refresh when window gains focus (when returning from edit)
-    const handleFocus = () => fetchItems();
+    const handleFocus = () => {
+      console.log('Window focused, fetching items...');
+      fetchItems();
+    };
     window.addEventListener('focus', handleFocus);
     
     return () => {
@@ -34,41 +44,83 @@ function ItemsList() {
 
   // Refresh items when returning from edit
   useEffect(() => {
+    console.log('Location state changed:', location.state);
     if (location.state?.refresh) {
-      fetchItems();
+      console.log('Refresh triggered from EditItemPage');
+      // Force complete refresh by clearing items first
+      setItems([]);
+      setFilteredItems([]);
+      setTimeout(() => {
+        fetchItems(searchTerm, currentPage);
+      }, 100);
       // Clear the refresh state to prevent multiple refreshes
       window.history.replaceState({}, document.title);
     }
-  }, [location.state]);
+  }, [location.state, searchTerm, currentPage]);
 
-  async function fetchItems() {
+  // Search functionality with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchItems(searchTerm, currentPage);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, currentPage]);
+
+  async function fetchItems(search = '', page = 1) {
       try {
-        const res = await axios.get('/api/item');
-        setItems(res.data);
+        const params = { page, limit: itemsPerPage };
+        if (search.trim()) {
+          params.search = search.trim();
+        }
+        const fullUrl = axios.defaults.baseURL + '/api/item';
+        console.log('Fetching items from:', '/api/item');
+        console.log('Params:', params);
+        console.log('Full URL:', fullUrl);
+        console.log('Axios base URL:', axios.defaults.baseURL);
+        const res = await axios.get('/api/item', { params });
+        console.log('Raw response:', res);
+        console.log('Response data:', res.data);
+        console.log('Data type:', typeof res.data);
+        console.log('Is array:', Array.isArray(res.data));
+        
+        // Extract items and pagination from the response object
+        const data = res.data.items || [];
+        const pagination = res.data.pagination || {};
+        console.log('Extracted items:', data);
+        console.log('Items count:', data.length);
+        console.log('Pagination:', pagination);
+        setItems(data);
+        
+        // Update pagination state from backend
+        if (pagination.totalPages) {
+          setTotalPages(pagination.totalPages);
+        }
+        // Always update filteredItems with fresh data from backend
+        setFilteredItems(data);
       } catch (err) {
+        console.error('Fetch error:', err);
         setItems([]);
       }
     }
 
+  // Backend handles all filtering, so we update filters by refetching
   useEffect(() => {
-    let filtered = items;
-    
-    // Filter by category
-    if (sortBy !== 'Both') {
-      filtered = filtered.filter(item => 
-        item.category && item.category.toString() === sortBy
-      );
+    if (sortBy !== 'Both' || stockFilter !== 'all') {
+      // When filters change, refetch from backend with filters
+      fetchItems(searchTerm, currentPage);
     }
-    
-    setFilteredItems(filtered);
-  }, [items, sortBy]);
+  }, [sortBy, stockFilter]);
 
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+  const safeFilteredItems = Array.isArray(filteredItems) ? filteredItems : [];
+  // Use backend pagination - show all items from current page
+  const currentItems = safeFilteredItems;
+  // Get totalPages from backend response (will be set in fetchItems)
+  const [totalPages, setTotalPages] = useState(1);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+    fetchItems(searchTerm, page);
   };
 
 
@@ -100,6 +152,18 @@ function ItemsList() {
   return (
     <div className="max-w-7xl mx-auto py-8 px-4">
       <h3 className="text-3xl font-bold mb-8 text-center text-indigo-700">Items List</h3>
+      
+      {/* Search Bar */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search items..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      
       <div className="flex justify-between mb-6">
         <div className="flex items-center gap-2 print:hidden">
           <label className="text-sm font-medium text-gray-700">Sort by:</label>
@@ -121,23 +185,51 @@ function ItemsList() {
         </button>
       </div>
 
-      {filteredItems.length === 0 ? (
-        <div className="text-gray-500 text-center">No items found.</div>
-      ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="flex items-center gap-3">
+                  Stock
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => {
+                        if (stockFilter === 'all') setStockFilter('in_stock');
+                        else if (stockFilter === 'in_stock') setStockFilter('out_of_stock');
+                        else setStockFilter('all');
+                      }}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                        stockFilter === 'out_of_stock' ? 'bg-red-500' : 
+                        stockFilter === 'in_stock' ? 'bg-green-500' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          stockFilter === 'out_of_stock' ? 'translate-x-5' : 
+                          stockFilter === 'in_stock' ? 'translate-x-1' : 'translate-x-3'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:hidden">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {safeFilteredItems.length === 0 ? (
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:hidden">Actions</th>
+                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                  No items found.
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {(window.matchMedia && window.matchMedia('print').matches ? filteredItems : currentItems).map((item, idx) => (
+            ) : (
+              currentItems.map((item, idx) => (
                 <tr key={item._id || idx} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{item.description}</td>
@@ -163,13 +255,13 @@ function ItemsList() {
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
       
-      {filteredItems.length > 0 && (
+      {safeFilteredItems.length > 0 && (
         <div className="flex justify-center items-center mt-6 gap-2 print:hidden">
           <button
             onClick={() => handlePageChange(currentPage - 1)}

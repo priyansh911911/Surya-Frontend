@@ -56,6 +56,7 @@ export default function AddItem({ onItemAdded }) {
                 category: "",
                 description: "",
                 stock: 0,
+                unit: ""
             });
             if (typeof onItemAdded === "function") onItemAdded();
         } catch (err) {
