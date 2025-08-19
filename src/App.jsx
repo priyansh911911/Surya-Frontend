@@ -14,6 +14,8 @@ import SidebarLayout from "./component/SidebarLayout";
 import Orders from "./pages/Orders";
 
 import SideBar from "./component/SideBar";
+import CreateOrder from "./pages/CreateOrder";
+import InvoiceViewer from "./pages/InvoiceViewer";
 
 export default function App() {
 
@@ -37,6 +39,8 @@ export default function App() {
           <Route path="/items/edit/:id" element={<EditItemPage />} />
           <Route path="/user" element={<UserManagement />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/orders/create" element={<CreateOrder />} />
+          <Route path="/orders/:orderId/invoice" element={<InvoiceViewer />} />
         </Route>
         {/* Default route */}
         <Route path="*" element={<Navigate to="/" replace />} />
