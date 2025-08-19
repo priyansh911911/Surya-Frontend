@@ -8,17 +8,23 @@ export default function CreateOrder() {
   const [items, setItems] = useState([]);
   const { axios, loading, setLoading, toast, setToast, navigate } = useAppContext();
 
+  // ✅ Category Mapping
+  const categoryMap = {
+    1: "Surya Medical",
+    2: "Surya Optical",
+  };
+
   // Fetch items for the dropdown
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        console.log('Fetching items for CreateOrder...');
-        const res = await axios.get('/api/item');
+        console.log("Fetching items for CreateOrder...");
+        const res = await axios.get("/api/item");
         const data = res.data.items || res.data || [];
-        console.log('Items for CreateOrder:', data.length);
+        console.log("Items for CreateOrder:", data.length);
         setItems(data);
       } catch (err) {
-        console.error('Failed to fetch items:', err);
+        console.error("Failed to fetch items:", err);
         setItems([]);
       }
     };
@@ -26,12 +32,20 @@ export default function CreateOrder() {
   }, [axios]);
 
   const [form, setForm] = useState({
-    orderNumber: "",
     customerName: "",
     customerPhone: "",
     discount: 0,
     tax: 0,
-    items: [{ itemId: "", itemName: "", category: "", quantity: 1, unitPrice: 0, totalPrice: 0 }],
+    items: [
+      {
+        itemId: "",
+        itemName: "",
+        category: "",
+        quantity: 1,
+        unitPrice: 0,
+        totalPrice: 0,
+      },
+    ],
   });
 
   // --- helpers ---
@@ -48,7 +62,8 @@ export default function CreateOrder() {
   const orderTotal = useMemo(() => {
     const sub = orderSubtotal;
     const afterDiscount = sub - (sub * Number(form.discount || 0)) / 100;
-    const afterTax = afterDiscount + (afterDiscount * Number(form.tax || 0)) / 100;
+    const afterTax =
+      afterDiscount + (afterDiscount * Number(form.tax || 0)) / 100;
     return Math.max(0, Math.round(afterTax));
   }, [orderSubtotal, form.discount, form.tax]);
 
@@ -62,6 +77,8 @@ export default function CreateOrder() {
       if (item) {
         updated.itemName = item.name;
         updated.unitPrice = item.price || 0;
+        // ✅ map category
+        updated.category = categoryMap[item.category] || item.category || "";
       }
     }
 
@@ -72,7 +89,17 @@ export default function CreateOrder() {
   const addItemRow = () => {
     setForm((f) => ({
       ...f,
-      items: [...f.items, { itemId: "", itemName: "", category: "", quantity: 1, unitPrice: 0, totalPrice: 0 }],
+      items: [
+        ...f.items,
+        {
+          itemId: "",
+          itemName: "",
+          category: "",
+          quantity: 1,
+          unitPrice: 0,
+          totalPrice: 0,
+        },
+      ],
     }));
   };
 
@@ -89,11 +116,13 @@ export default function CreateOrder() {
     setError("");
 
     const invalid = form.items.some(
-      (it) => !it.itemId || Number(it.quantity) <= 0 || Number(it.unitPrice) < 0
+      (it) =>
+        !it.itemId || Number(it.quantity) <= 0 || Number(it.unitPrice) < 0
     );
     if (!form.customerName || !form.customerPhone || invalid) {
       setError("Please fill all required fields.");
-      setToast && setToast({ type: "error", message: "Please fill all required fields." });
+      setToast &&
+        setToast({ type: "error", message: "Please fill all required fields." });
       return;
     }
 
@@ -102,7 +131,8 @@ export default function CreateOrder() {
     try {
       setLoading(true);
       await axios.post("/api/orders", payload);
-      setToast && setToast({ type: "success", message: "Order created successfully!", duration: 3000 });
+      setToast &&
+        setToast({ type: "success", message: "Order created successfully!" });
       navigate("/orders");
     } catch (e) {
       const msg = e?.response?.data?.message || "Failed to create order";
@@ -113,41 +143,42 @@ export default function CreateOrder() {
     }
   };
 
-    const itemOptions = items?.map((item) => ({
-    value: item._id,
-    label: item.name,
-  })) || [];
+  const itemOptions =
+    items?.map((item) => ({
+      value: item._id,
+      label: item.name,
+    })) || [];
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6 text-gray-800">📝 Create Order</h1>
 
-      {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
+      {error && (
+        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>
+      )}
 
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow-lg rounded-2xl p-6 space-y-6"
       >
         {/* Customer Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input
-            className="border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Order Number"
-            value={form.orderNumber}
-            onChange={(e) => setForm((f) => ({ ...f, orderNumber: e.target.value }))}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input
             className="border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
             placeholder="Customer Name *"
             value={form.customerName}
-            onChange={(e) => setForm((f) => ({ ...f, customerName: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, customerName: e.target.value }))
+            }
             required
           />
           <input
             className="border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
             placeholder="Customer Phone *"
             value={form.customerPhone}
-            onChange={(e) => setForm((f) => ({ ...f, customerPhone: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, customerPhone: e.target.value }))
+            }
             required
           />
         </div>
@@ -161,7 +192,9 @@ export default function CreateOrder() {
               min="0"
               className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-green-500 outline-none"
               value={form.discount}
-              onChange={(e) => setForm((f) => ({ ...f, discount: Number(e.target.value) }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, discount: Number(e.target.value) }))
+              }
             />
           </div>
           <div>
@@ -171,7 +204,9 @@ export default function CreateOrder() {
               min="0"
               className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-green-500 outline-none"
               value={form.tax}
-              onChange={(e) => setForm((f) => ({ ...f, tax: Number(e.target.value) }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, tax: Number(e.target.value) }))
+              }
             />
           </div>
         </div>
@@ -192,43 +227,47 @@ export default function CreateOrder() {
           {form.items.map((it, idx) => (
             <div
               key={idx}
-              className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-3 bg-gray-50 p-3 rounded-lg"
+              className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3 bg-gray-50 p-3 rounded-lg"
             >
-             <Select
+              <Select
                 options={itemOptions}
                 value={itemOptions.find((opt) => opt.value === it.itemId) || null}
-                onChange={(selected) => updateItem(idx, "itemId", selected.value)}
-                placeholder="Select Item *"
+                onChange={(selected) =>
+                  updateItem(idx, "itemId", selected.value)
+                }
+                placeholder="Select Item"
                 className="w-full"
               />
 
+              {/* ✅ category mapped from API */}
               <input
                 className="border rounded-lg p-2 bg-gray-100"
-                value={it.itemName}
+                value={it.category}
                 readOnly
               />
-              <input
-                className="border rounded-lg p-2"
-                placeholder="Category"
-                value={it.category}
-                onChange={(e) => updateItem(idx, "category", e.target.value)}
-              />
+
               <input
                 type="number"
                 min="1"
                 className="border rounded-lg p-2"
                 value={it.quantity}
-                onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))}
+                onChange={(e) =>
+                  updateItem(idx, "quantity", Number(e.target.value))
+                }
               />
               <input
                 type="number"
                 min="0"
                 className="border rounded-lg p-2"
                 value={it.unitPrice}
-                onChange={(e) => updateItem(idx, "unitPrice", Number(e.target.value))}
+                onChange={(e) =>
+                  updateItem(idx, "unitPrice", Number(e.target.value))
+                }
               />
               <div className="flex justify-between items-center">
-                <span className="font-medium text-green-600">₹{it.totalPrice}</span>
+                <span className="font-medium text-green-600">
+                  ₹{it.totalPrice}
+                </span>
                 <button
                   type="button"
                   onClick={() => removeItemRow(idx)}
@@ -243,20 +282,36 @@ export default function CreateOrder() {
         </div>
 
         {/* Totals */}
-  
-<div className="flex flex-col md:flex-row justify-end gap-6 pt-4 border-t">
-  <div className="text-gray-700">Subtotal: <b>₹{orderSubtotal}</b></div>
-  <div className="text-gray-700">Discount ({form.discount}%): <b>-₹{Math.round((orderSubtotal * form.discount) / 100)}</b></div>
-  <div className="text-gray-700">Tax ({form.tax}%): <b>+₹{Math.round(((orderSubtotal - (orderSubtotal * form.discount) / 100) * form.tax) / 100)}</b></div>
-  <div className="text-gray-900">Total: <b className="text-lg text-emerald-600">₹{orderTotal}</b></div>
-  <button
-    type="submit"
-    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg shadow-md"
-  >
-    {loading ? "Saving..." : "Save Order"}
-  </button>
-</div>
-
+        <div className="flex flex-col md:flex-row justify-end gap-6 pt-4 border-t">
+          <div className="text-gray-700">
+            Subtotal: <b>₹{orderSubtotal}</b>
+          </div>
+          <div className="text-gray-700">
+            Discount ({form.discount}%):{" "}
+            <b>-₹{Math.round((orderSubtotal * form.discount) / 100)}</b>
+          </div>
+          <div className="text-gray-700">
+            Tax ({form.tax}%):{" "}
+            <b>
+              +₹
+              {Math.round(
+                ((orderSubtotal - (orderSubtotal * form.discount) / 100) *
+                  form.tax) /
+                  100
+              )}
+            </b>
+          </div>
+          <div className="text-gray-900">
+            Total:{" "}
+            <b className="text-lg text-emerald-600">₹{orderTotal}</b>
+          </div>
+          <button
+            type="submit"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg shadow-md"
+          >
+            {loading ? "Saving..." : "Save Order"}
+          </button>
+        </div>
       </form>
     </div>
   );
