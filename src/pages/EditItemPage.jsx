@@ -38,7 +38,7 @@ function EditItemPage() {
     try {
       await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/item/${id}`, formData);
       toast.success('Item updated successfully!');
-      navigate('/items');
+      navigate('/items', { state: { refresh: true } });
     } catch (err) {
       toast.error('Failed to update item');
     }
