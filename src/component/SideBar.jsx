@@ -23,7 +23,7 @@ const SideBar = () => {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <div className="bg-gradient-to-b from-gray-900 to-gray-800 text-white w-64 p-5 shadow-lg relative flex flex-col">
+      <div className="bg-gradient-to-b from-gray-900 to-gray-800 text-white w-64 p-5 shadow-lg relative flex flex-col print:hidden">
       {/* Title */}
       <h1 className="text-lg font-bold tracking-wide mb-6">
         Surya Medical And Optical

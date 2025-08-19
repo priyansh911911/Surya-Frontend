@@ -1,8 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Dashboard from "./pages/Dashboard";
 import UserManagement from "./pages/UserManagement";
 import ItemsList from "./pages/ItemsList";
+import AddItemPage from "./pages/AddItemPage";
+import EditItemPage from "./pages/EditItemPage";
 import Login from "./pages/LogIn";
 import ProtectedRoute from "./component/ProtectedRoute";
 
@@ -18,7 +21,7 @@ export default function App() {
 
   return (
     <>
-      <Toaster position="top-right" reverseOrder={false} />
+      <ToastContainer position="top-right" autoClose={3000} />
       <Routes>
         {/* Login page without sidebar */}
         <Route path="/login" element={<Login />} />
@@ -32,6 +35,8 @@ export default function App() {
         >
           <Route path="/" element={<Dashboard />} />
           <Route path="/items" element={<ItemsList />} />
+          <Route path="/items/add" element={<AddItemPage />} />
+          <Route path="/items/edit/:id" element={<EditItemPage />} />
           <Route path="/user" element={<UserManagement />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/orders/create" element={<CreateOrder />} />
